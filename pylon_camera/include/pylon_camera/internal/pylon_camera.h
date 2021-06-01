@@ -86,7 +86,8 @@ public:
 
     virtual bool setExposure(const float& target_exposure, float& reached_exposure);
 
-    virtual bool setAutoflash(const std::map<int, bool> flash_on_lines);
+    virtual bool setAutoflash(const std::map<int, bool> flash_on_lines,
+                              const pylon_camera::SHUTTER_MODE mode);
 
     virtual bool setGain(const float& target_gain, float& reached_gain);
 

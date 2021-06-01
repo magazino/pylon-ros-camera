@@ -165,7 +165,7 @@ bool PylonGigEAce2Camera::applyCamSpecificStartupSettings(const PylonCameraParam
 
                     flash_on_lines[2] = parameters.auto_flash_line_2_;
                     flash_on_lines[3] = parameters.auto_flash_line_3_;
-                    setAutoflash(flash_on_lines);
+                    setAutoflash(flash_on_lines, parameters.shutter_mode_);
                 }
 
                 // http://www.baslerweb.com/media/documents/AW00064902000%20Control%20Packet%20Timing%20With%20Delays.pdf
@@ -200,6 +200,16 @@ bool PylonGigEAce2Camera::applyCamSpecificStartupSettings(const PylonCameraParam
         else if (parameters.startup_user_set_ == "CurrentSetting")
             {
                 cam_->GevSCPSPacketSize.SetValue(parameters.mtu_size_);
+                if (parameters.auto_flash_)
+                {
+                    std::map<int, bool> flash_on_lines;
+                    ROS_INFO("Flash 2: %i", parameters.auto_flash_line_2_);
+                    ROS_INFO("Flash 3: %i", parameters.auto_flash_line_3_);
+
+                    flash_on_lines[2] = parameters.auto_flash_line_2_;
+                    flash_on_lines[3] = parameters.auto_flash_line_3_;
+                    setAutoflash(flash_on_lines, parameters.shutter_mode_);
+                }
                 ROS_WARN("No User Set Is selected, Camera current setting will be used");
             }
     }

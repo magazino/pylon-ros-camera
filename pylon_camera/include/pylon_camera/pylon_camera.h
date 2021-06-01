@@ -191,7 +191,8 @@ public:
               activate or deactivate the autoflash for this line .
      * @return false if a communication error occurred or true otherwise.
      */
-    virtual bool setAutoflash(const std::map<int, bool> flash_on_lines) = 0;
+    virtual bool setAutoflash(const std::map<int, bool> flash_on_lines, 
+                              const pylon_camera::SHUTTER_MODE mode) = 0;
     /**
      * Sets the gain in percent independent of the camera type
      * @param target_gain the target gain in percent.

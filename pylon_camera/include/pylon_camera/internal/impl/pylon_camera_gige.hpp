@@ -89,53 +89,51 @@ typedef PylonCameraImpl<GigECameraTrait> PylonGigECamera;
 
 
 template <>
-bool PylonGigECamera::setAutoflash(const std::map<int, bool> flash_on_lines)
+bool PylonGigECamera::setAutoflash(const std::map<int, bool> flash_on_lines, const pylon_camera::SHUTTER_MODE mode)
 {
-    // bool acc_auto_flash = false;
-    for (const std::pair<int, bool> p : flash_on_lines)
+    std::string flash_trigger;
+    const std::map<int, Basler_UniversalCameraParams::LineSelectorEnums> line_selector_map =
+    {
+        { 2, Basler_UniversalCameraParams::LineSelector_Line2 },
+        { 3, Basler_UniversalCameraParams::LineSelector_Line3 },
+        { 4, Basler_UniversalCameraParams::LineSelector_Line4 },
+    };
+    // This is valid for usb and gige cameras we tested so far
+    const std::map <int, Basler_UniversalCameraParams::LineSourceEnums> line_source_map =
+    {
+        { 2, Basler_UniversalCameraParams::LineSource_UserOutput1},
+        { 3, Basler_UniversalCameraParams::LineSource_UserOutput2},
+    };
+
+    cam_->StopGrabbing();
+    for (const std::pair<int, bool> flash_on_line : flash_on_lines)
     {
         try
         {
-            //cam_->StartGrabbing();
-            grabbingStarting();
-            cam_->StopGrabbing();
-            ROS_INFO("Executing SetAutoFlash: %i -> %i", p.first, p.second);
-            if (p.first == 2)
+            ROS_INFO("Executing SetAutoFlash: %i -> %i", flash_on_line.first, flash_on_line.second);
+            if (line_selector_map.find(flash_on_line.first) != line_selector_map.end())
             {
-                if (p.second)
+                if (flash_on_line.second)
                 {
                     // Set to flash
-                    cam_->LineSelector.SetValue(Basler_UniversalCameraParams::LineSelector_Line2);
+                    cam_->LineSelector.SetValue(line_selector_map.at(flash_on_line.first));
                     cam_->LineMode.SetValue(Basler_UniversalCameraParams::LineMode_Output);
-                    cam_->LineSource.SetValue(Basler_UniversalCameraParams::LineSource_ExposureActive);
+                    // Assuming default mode is global shutter 
+                    if (mode == SM_GLOBAL || mode == SM_DEFAULT)
+                        cam_->LineSource.SetValue(Basler_UniversalCameraParams::LineSource_ExposureActive);
+                    else
+                        cam_->LineSource.SetValue(Basler_UniversalCameraParams::LineSource_FlashWindow);
                 }
                 else
                 {
                     // Set to default
-                    cam_->LineSelector.SetValue(Basler_UniversalCameraParams::LineSelector_Line2);
+                    cam_->LineSelector.SetValue(line_selector_map.at(flash_on_line.first));
                     cam_->LineMode.SetValue(Basler_UniversalCameraParams::LineMode_Output);
-                    cam_->LineSource.SetValue(Basler_UniversalCameraParams::LineSource_UserOutput1);
+                    cam_->LineSource.SetValue(line_source_map.at(flash_on_line.first));
                 }
-                continue;
             }
-            if (p.first == 3)
-            {
-                if (p.second)
-                {
-                    // Set to flash
-                    cam_->LineSelector.SetValue(Basler_UniversalCameraParams::LineSelector_Line3);
-                    cam_->LineMode.SetValue(Basler_UniversalCameraParams::LineMode_Output);
-                    cam_->LineSource.SetValue(Basler_UniversalCameraParams::LineSource_ExposureActive);
-                }
-                else
-                {
-                    // Set to default
-                    cam_->LineSelector.SetValue(Basler_UniversalCameraParams::LineSelector_Line3);
-                    cam_->LineMode.SetValue(Basler_UniversalCameraParams::LineMode_Input);
-                }
-                continue;
-           }
-           ROS_WARN("Got request to set Flash for line %i, but only 2 and 3 are implemented!", p.first);
+            else
+                ROS_WARN("Got request to set Flash for line %i, but only 2, 3 and 4 are implemented!", flash_on_line.first);
         }
         catch ( const GenICam::GenericException &e )
         {
@@ -251,7 +249,7 @@ bool PylonGigECamera::applyCamSpecificStartupSettings(const PylonCameraParameter
 
                     flash_on_lines[2] = parameters.auto_flash_line_2_;
                     flash_on_lines[3] = parameters.auto_flash_line_3_;
-                    setAutoflash(flash_on_lines);
+                    setAutoflash(flash_on_lines, parameters.shutter_mode_);
                 }
 
                 // http://www.baslerweb.com/media/documents/AW00064902000%20Control%20Packet%20Timing%20With%20Delays.pdf
@@ -286,6 +284,16 @@ bool PylonGigECamera::applyCamSpecificStartupSettings(const PylonCameraParameter
         else if (parameters.startup_user_set_ == "CurrentSetting")
             {
                 cam_->GevSCPSPacketSize.SetValue(parameters.mtu_size_);
+                if (parameters.auto_flash_)
+                {
+                    std::map<int, bool> flash_on_lines;
+                    ROS_INFO("Flash 2: %i", parameters.auto_flash_line_2_);
+                    ROS_INFO("Flash 3: %i", parameters.auto_flash_line_3_);
+
+                    flash_on_lines[2] = parameters.auto_flash_line_2_;
+                    flash_on_lines[3] = parameters.auto_flash_line_3_;
+                    setAutoflash(flash_on_lines, parameters.shutter_mode_);
+                }
                 ROS_WARN("No User Set Is selected, Camera current setting will be used");
             }
     }

@@ -994,10 +994,10 @@ bool PylonCameraNode::setAutoflash(const int output_id,
                                    std_srvs::SetBool::Request &req,
                                    std_srvs::SetBool::Response &res)
 {
-    ROS_INFO("AUtoFlashCB: %i -> %i", output_id, req.data);
+    ROS_INFO("AutoFlashCB: %i -> %i", output_id, req.data);
     std::map<int, bool> auto_flashs;
     auto_flashs[output_id] = req.data;
-    pylon_camera_->setAutoflash(auto_flashs);
+    pylon_camera_->setAutoflash(auto_flashs, pylon_camera_parameter_set_.shutter_mode_);
     res.success = true;
     return true;
 }
