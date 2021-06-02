@@ -105,7 +105,6 @@ bool PylonGigECamera::setAutoflash(const std::map<int, bool> flash_on_lines, con
         { 3, Basler_UniversalCameraParams::LineSource_UserOutput2},
     };
 
-    cam_->StopGrabbing();
     for (const std::pair<int, bool> flash_on_line : flash_on_lines)
     {
         try
